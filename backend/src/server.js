@@ -7,7 +7,7 @@ import { connectSocket } from "./controler/socket_manager.js";
 
 
 const app = express();
-app.set("port", (process.env.PORT || 3000));
+app.set("port", (process.env.PORT || 5000));
 
 app.use(cors());
 app.use(express.json({limit: "50mb"}));
@@ -16,7 +16,7 @@ app.use("/api/user", userRoutes);
 
 
 const server=createServer(app);
-const io= new connectSocket(server);
+const io = connectSocket(server);
 
 const start = async () => {
 

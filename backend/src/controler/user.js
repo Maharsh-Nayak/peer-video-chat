@@ -2,15 +2,29 @@ import User from '../model/user_models.js';
 import httpStatus from 'http-status';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+import express from "express";
+
+const app = express();
+
+app.use(express.json()); 
+
+app.use(express.urlencoded({ extended: true }));
+
 
 const register=async (req, res) => {
+
+    console.log(req);
+
+    console.log(req.body);
+
     const {username, email, password} = req.body;
 
+
     if(!username || !password || !email) {
-        return res.statur(httpStatus.PARTIAL_CONTENT).json({message: "Username and password are required"});
+        return res.status(httpStatus.PARTIAL_CONTENT).json({message: "Username and password are required"});
     }
     try{
-        const exist=await User.findOne({unsername});
+        const exist=await User.findOne({username});
         if(exist){
             return res.status(httpStatus.CONFLICT).json({message: "Username already exists"});
         }
