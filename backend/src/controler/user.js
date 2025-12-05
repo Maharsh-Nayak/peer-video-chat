@@ -3,6 +3,7 @@ import httpStatus from 'http-status';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import express from "express";
+import { use } from 'react';
 
 const app = express();
 
@@ -13,10 +14,6 @@ app.use(express.urlencoded({ extended: true }));
 
 const register=async (req, res) => {
 
-    console.log(req);
-
-    console.log(req.body);
-
     const {username, email, password} = req.body;
 
 
@@ -24,12 +21,16 @@ const register=async (req, res) => {
         return res.status(httpStatus.PARTIAL_CONTENT).json({message: "Username and password are required"});
     }
     try{
-        const exist=await User.findOne({username});
+        console.log("Checking if username or email exists");
+        var exist=await User.findOne({username});
         if(exist){
+            console.log("Username already exists");
             return res.status(httpStatus.CONFLICT).json({message: "Username already exists"});
         }
+        console.log("Checking if email exists");
         exist=await User.findOne({email});
         if(exist){
+            console.log("Email already exists");
             return res.status(httpStatus.CONFLICT).json({message: "Email already exists"});
         }
     }catch(error) {
@@ -45,6 +46,8 @@ const register=async (req, res) => {
             password:password,
             hashedPassword:hashedPassword
         });
+        await user.save();
+        console.log("User registered successfully:", user);
         res.status(httpStatus.CREATED).json({message: "User registered successfully", user});
     }
     catch(error) {
@@ -55,21 +58,29 @@ const register=async (req, res) => {
 
 const login = async (req, res) => {
     const{username, password} = req.body;
+    console.log("Login attempt for user:", username);
     if(!username || !password) {
         return res.status(httpStatus.PARTIAL_CONTENT).json({message: "Username and password are required"});
     }
 
     try{
-        const user = await User.find({username});
+        console.log("Finding user with username:");
+        const user = await User.findOne({username});
+        console.log("User found:", user);
         if(!user) {
+            console.log("User not found");
             return res.status(httpStatus.NOT_FOUND).json({message: "User not found"});
         }
         if(user.password !== password) {
+            console.log("Invalid password");
+            console.log(user.password, password);
             return res.status(httpStatus.UNAUTHORIZED).json({message: "Invalid password"});
         }
 
         const token = crypto.randomBytes(20).toString('hex');
         user.token = token;
+        await user.save();
+        console.log("User logged in successfully:", username);
         return res.status(httpStatus.OK).json({message: "Login successful", token});
     }
     catch(error) {

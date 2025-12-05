@@ -20,7 +20,7 @@ const io = connectSocket(server);
 
 const start = async () => {
 
-    const connection = await mongoose.connect("mongodb+srv://maharshnayak5:Or5esSYQuGlZLj0i@cluster0.t0bqm.mongodb.net/");
+    const connection = await mongoose.connect("mongodb+srv://maharshnayak5:Or5esSYQuGlZLj0i@cluster0.t0bqm.mongodb.net/?appName=Cluster0");
 
     console.log("Connected to MongoDB");
 

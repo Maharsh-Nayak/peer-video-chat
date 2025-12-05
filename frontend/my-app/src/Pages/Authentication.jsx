@@ -93,20 +93,20 @@ export function Authentication() {
               {/* Form Inputs */}
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {!isLogin && (
-                  <TextField
-                    label="Username"
-                    value={userName}
-                    onChange={(e) => setUserName(e.target.value)}
-                    fullWidth
-                  />
-                )}
-                
                 <TextField
                   label="Email"
                   type="email"
                   fullWidth
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                />
+                )}
+                
+                <TextField
+                  label="Username"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  fullWidth
                 />
 
                 <TextField

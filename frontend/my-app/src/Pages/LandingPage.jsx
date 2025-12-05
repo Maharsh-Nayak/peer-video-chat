@@ -1,7 +1,11 @@
 import "../App.css";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 export function LandingPage() {
+
+  const navigate = useNavigate();
+
   return (
     <div className="LandingPage">
       <nav>
@@ -10,8 +14,8 @@ export function LandingPage() {
         </div>
         <div className="list">
             <p>Join as Guest</p>
-            <p>Sign In</p>
-            <div>
+            <p onClick={() => navigate("/auth")}>Sign In</p>
+            <div onClick={() => navigate("/auth")}>
                 <p>Login</p>
             </div>
         </div>
