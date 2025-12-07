@@ -4,6 +4,7 @@ import { Routes, BrowserRouter as Router, Route } from 'react-router-dom';
 import { LandingPage } from './Pages/LandingPage.jsx';
 import { Authentication } from './Pages/Authentication.jsx';
 import { AuthProvider } from "./context/authContext";
+import MeetEntery from './Pages/videoMeetPage.jsx';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path='/auth' element={<Authentication />} />
+              <Route path="/meet/" element={<MeetEntery />} />
               <Route path="/about" element={<div className="App"><header className="App-header"><h1>About Page</h1><p>This is the about page.</p></header></div>} />
               <Route path="/contact" element={<div className="App"><header className="App-header"><h1>Contact Page</h1><p>This is the contact page.</p></header></div>} />
               <Route path="/login" element={<div className="App"><header className="App-header"><h1>Login Page</h1><p>Please log in to continue.</p></header></div>} />

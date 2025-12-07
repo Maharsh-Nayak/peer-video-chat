@@ -33,3 +33,165 @@
   height: 50vh;
   width: auto;
 }
+
+.LandingPage {
+  width: 100%;
+  padding: 0 60px;
+  font-family: "Poppins", sans-serif;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.nav-links {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+}
+
+.link {
+  cursor: pointer;
+  font-size: 16px;
+  transition: 0.2s;
+}
+
+.link:hover {
+  opacity: 0.7;
+}
+
+.login-btn {
+  background-color: #1976d2;
+  padding: 8px 18px;
+  border-radius: 6px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.login-btn:hover {
+  background-color: #125aa0;
+}
+
+/* Main Section */
+
+.main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 60px;
+}
+
+.content h2 {
+  font-size: 42px;
+  margin-bottom: 16px;
+}
+
+.content p {
+  width: 380px;
+  font-size: 18px;
+  margin-bottom: 25px;
+  color: #555;
+}
+
+.primary-btn {
+  padding: 12px 24px;
+  background-color: black;
+  color: white;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+  font-size: 16px;
+}
+
+.primary-btn:hover {
+  opacity: 0.85;
+}
+
+.photo img {
+  width: 480px;
+  border-radius: 12px;
+}
+
+@media (max-width: 900px) {
+  .main {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .content p {
+    width: 100%;
+  }
+
+  .photo img {
+    width: 350px;
+    margin-top: 40px;
+  }
+}
+
+.LandingPage {
+  min-height: 100vh;
+  background: linear-gradient(120deg, #edf2fb, #e2eafc);
+  position: relative;
+}
+
+.LandingPage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#c7d2fe 1px, transparent 1px);
+  background-size: 18px 18px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+
+.tag {
+  background: #e3f2fd;
+  padding: 6px 14px;
+  border-radius: 20px;
+  color: #1976d2;
+  font-size: 14px;
+  display: inline-block;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.features {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  color: #444;
+  font-size: 16px;
+}
+
+.photo img {
+  width: 480px;
+  border-radius: 18px;
+  box-shadow: 0px 20px 40px rgba(0,0,0,0.08);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.cta {
+  text-align: center;
+  margin-top: 70px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}

@@ -8,29 +8,46 @@ export function LandingPage() {
 
   return (
     <div className="LandingPage">
-      <nav>
-        <div className="navbar">
-            <h2>Zoom</h2>
-        </div>
-        <div className="list">
-            <p>Join as Guest</p>
-            <p onClick={() => navigate("/auth")}>Sign In</p>
-            <div onClick={() => navigate("/auth")}>
-                <p>Login</p>
-            </div>
+      {/* Navbar */}
+      <nav className="navbar">
+        <h2 className="logo">Zoom</h2>
+        <div className="nav-links">
+          <p className="link">Join as Guest</p>
+          <p className="link clickable" onClick={() => navigate("/auth")}>Sign In</p>
+          <button className="login-btn" onClick={() => navigate("/auth")}>
+            Login
+          </button>
         </div>
       </nav>
+
+      {/* Main Section */}
       <div className="main">
         <div className="content">
-          <h2>Connect on Live call</h2>
-          <p>
-            Join a meeting with your friends, family, or colleagues from anywhere in the world.
-          </p>
-        </div>
+  <span className="tag">💬 Video Calling Made Simple</span>
+  <h2>Connect on Live Call</h2>
+  <p>
+    Join a meeting with your friends, family, or colleagues from anywhere in the world.
+  </p>
+  <button className="primary-btn" onClick={() => navigate("/auth")}>Get Started</button>
+</div>
+
+<div className="features">
+  <div>🛡️ Secure Meetings</div>
+  <div>🌍 Global Access</div>
+  <div>⚡ Low Latency</div>
+</div>
+
+
         <div className="photo">
-          <img src="/landing3.png" alt="Photo" />
+          <img src="/landing3.png" alt="Landing" />
         </div>
+
+
       </div>
+        <div className="cta">
+  <p>Ready to start your meeting?</p>
+  <button className="primary-btn">Join Now</button>
+</div>
     </div>
   );
 }
