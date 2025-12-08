@@ -2,6 +2,7 @@ import "../App.css";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/authContext";
+import { useLocation } from "react-router-dom";
 
 import {
   Button,
@@ -14,15 +15,17 @@ import {
 } from "@mui/material";
 
 export function Authentication() {
+  const location = useLocation();
+  const mode = location.state?.mode || "login";
+
   const [userName, setUserName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [isLogin, setIsLogin] = React.useState(true);
+  const [isLogin, setIsLogin] = React.useState(mode === "login" ? true : false);
 
   const navigate = useNavigate();
 
-
-  const imgUrl = "https://picsum.photos/500?random";
+  const imgUrl = "authBack.png ";
 
   const { handleLogin, handleRegister } = React.useContext(AuthContext);
 
@@ -30,7 +33,6 @@ export function Authentication() {
     try {
       let res = await handleRegister(userName, email, password);
       console.log(res);
-      
     } catch (error) {
       console.error("Registration failed:", error);
     }
@@ -45,97 +47,138 @@ export function Authentication() {
     }
   };
 
-  return (
-    <Container maxWidth="lg" sx={{ height: "100vh", display: "flex", alignItems: "center" }}>
-      <Paper elevation={6} sx={{ borderRadius: 4, overflow: "hidden", width: "100%" }}>
-        <Grid container>
-          
-          <Grid item xs={12} md={7}>
-            <img src={imgUrl} alt="auth visual"
-              style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          </Grid>
+ return (
 
-          <Grid item xs={12} md={5}>
-            <Box sx={{ p: 5, display: "flex", flexDirection: "column", gap: 3 }}>
+  
 
-                <Button
-                variant="outlined"
-                fullWidth
-                sx={{ py: 1, fontSize: "1rem" }}
-                onClick={() => navigate("/")}
-                >
-                    ⬅ Back
-                </Button>
+  <Grid container sx={{ height: "100vh" }}>
+    
+    {/* LEFT IMAGE SECTION */}
+    <Grid item xs={12} md={7} sx={{ height: "100%" }}>
+      <img
+        src={imgUrl}
+        alt="auth visual"
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
+      />
+    </Grid>
 
-              
-              <Typography variant="h4" fontWeight="bold" textAlign="center">
-                {isLogin ? "Welcome Back 👋" : "Create Your Account 📝"}
-              </Typography>
+    {/* RIGHT FORM SECTION */}
+    <Grid
+  item
+  xs={12}
+  md={5}
+  sx={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+  }}
+>
+  <Box
+    sx={{
+      width: "100%",
+      maxWidth: "380px",
+      textAlign: "center",
+      px: 2,
+    }}
+  >
+    <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
+      Travel with us
+    </Typography>
+    <Typography variant="body1" sx={{ mb: 4, opacity: 0.6 }}>
+      Join us today
+    </Typography>
 
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
-                <Button 
-                  variant={isLogin ? "contained" : "outlined"} 
-                  onClick={() => setIsLogin(true)}
-                  sx={{ width: "40%" }}
-                >
-                  Login
-                </Button>
+    {/* Google */}
+    <Button
+      fullWidth
+      variant="outlined"
+      sx={{
+        mb: 2,
+        borderRadius: "30px",
+        py: 1.4,
+        textTransform: "none",
+        fontSize: "1rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <img
+        src="https://img.icons8.com/color/20/google-logo.png"
+        alt=""
+        style={{ marginRight: "8px" }}
+      />
+      Sign up with Google
+    </Button>
 
-                <Button 
-                  variant={!isLogin ? "contained" : "outlined"} 
-                  onClick={() => setIsLogin(false)}
-                  sx={{ width: "40%" }}
-                >
-                  Register
-                </Button>
-              </Box>
+    {/* Apple */}
+    <Button
+      fullWidth
+      variant="outlined"
+      sx={{
+        mb: 2,
+        borderRadius: "30px",
+        py: 1.4,
+        textTransform: "none",
+        fontSize: "1rem",
+      }}
+    >
+      🍎 Sign up with Apple
+    </Button>
 
-              {/* Form Inputs */}
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {!isLogin && (
-                <TextField
-                  label="Email"
-                  type="email"
-                  fullWidth
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                )}
-                
-                <TextField
-                  label="Username"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  fullWidth
-                />
+    {/* Divider */}
+    <Box sx={{ display: "flex", alignItems: "center", my: 3 }}>
+      <Box sx={{ flex: 1, height: "1px", background: "#ddd" }} />
+      <Typography sx={{ mx: 2, opacity: 0.7 }}>OR</Typography>
+      <Box sx={{ flex: 1, height: "1px", background: "#ddd" }} />
+    </Box>
 
-                <TextField
-                  label="Password"
-                  type="password"
-                  fullWidth
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </Box>
+    {/* Fields */}
+    <TextField label="Username" fullWidth sx={{ mb: 2 }} />
+    <TextField type="password" label="Password" fullWidth sx={{ mb: 3 }} />
 
-              {/* Submit Button */}
-              <Button
-                variant="contained"
-                fullWidth
-                sx={{ py: 1.5, mt: 2, fontSize: "1.1rem" }}
-                onClick={isLogin ? handleUserLogin : handleUserRegister}
-              >
-                {isLogin ? "Login" : "Register"}
-              </Button>
+    {/* Login button */}
+    <Button
+      fullWidth
+      sx={{
+        backgroundColor: "black",
+        color: "white",
+        borderRadius: "30px",
+        py: 1.5,
+        fontSize: "1rem",
+        textTransform: "none",
+        mb: 3,
+        "&:hover": { backgroundColor: "#333" },
+      }}
+    >
+      Log in
+    </Button>
 
-              <Typography textAlign="center" sx={{ mt: 1, fontSize: "0.9rem", opacity: 0.6 }}>
-                {isLogin ? "Don't have an account? Register instead." : "Already have an account? Login instead."}
-              </Typography>
+    <Typography sx={{ mb: 2, opacity: 0.7 }}>
+      Don't have an account?
+    </Typography>
 
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
-    </Container>
-  );
+    <Button
+      fullWidth
+      variant="outlined"
+      sx={{
+        borderRadius: "30px",
+        py: 1.2,
+        textTransform: "none",
+        fontSize: "1rem",
+      }}
+    >
+      Sign up
+    </Button>
+  </Box>
+</Grid>
+
+  </Grid>
+);
+
 }
