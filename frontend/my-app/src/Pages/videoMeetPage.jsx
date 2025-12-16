@@ -113,6 +113,36 @@ const MeetEntery = () => {
     getPermission();
   }, [])
 
+  useEffect(() => {
+        if (videoStream !== undefined && audioStream !== undefined) {
+            getUserMedia();
+            console.log("SET STATE HAS ", videoStream, audioStream);
+
+        }
+
+
+    }, [videoStream, audioStream, isVideoOn, isAudioOn]);
+    let getMedia = () => {
+        setVideoStream(isVideoAvailable);
+        setAudioStream(isAudioAvailable);
+        connectToSocketServer();
+
+    }
+
+    let getUserMedia = () => {
+        if ((videoStream && isVideoOn) || (audioStream && isAudioOn)) {
+            navigator.mediaDevices.getUserMedia({ video: isVideoOn, audio: isAudioOn })
+                .then(getUserMediaSuccess)
+                .then((stream) => { })
+                .catch((e) => console.log(e))
+        } else {
+            try {
+                let tracks = localVideoref.current.srcObject.getTracks()
+                tracks.forEach(track => track.stop())
+            } catch (e) { }
+        }
+    }
+
   return (
     <div
       style={{

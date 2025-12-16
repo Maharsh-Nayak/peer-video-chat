@@ -3,6 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/authContext";
 import { useLocation } from "react-router-dom";
+import {status} from "http-status";
 
 import {
   Button,
@@ -32,7 +33,9 @@ export function Authentication() {
   const handleUserRegister = async () => {
     try {
       let res = await handleRegister(userName, email, password);
-      console.log(res);
+      if(res){
+        setIsLogin(true);
+      }
     } catch (error) {
       console.error("Registration failed:", error);
     }
@@ -41,6 +44,9 @@ export function Authentication() {
   const handleUserLogin = async () => {
     try {
       let res = await handleLogin(userName, password);
+      if(res){
+        navigate("/meet/");
+      }
       console.log(res);
     } catch (error) {
       console.error("Login failed:", error);
@@ -53,7 +59,6 @@ export function Authentication() {
 
   <Grid container sx={{ height: "100vh" }}>
     
-    {/* LEFT IMAGE SECTION */}
     <Grid item xs={12} md={7} sx={{ height: "100%" }}>
       <img
         src={imgUrl}
@@ -66,7 +71,6 @@ export function Authentication() {
       />
     </Grid>
 
-    {/* RIGHT FORM SECTION */}
     <Grid
   item
   xs={12}
@@ -93,7 +97,6 @@ export function Authentication() {
       Join us today
     </Typography>
 
-    {/* Google */}
     <Button
       fullWidth
       variant="outlined"
@@ -116,33 +119,21 @@ export function Authentication() {
       Sign up with Google
     </Button>
 
-    {/* Apple */}
-    <Button
-      fullWidth
-      variant="outlined"
-      sx={{
-        mb: 2,
-        borderRadius: "30px",
-        py: 1.4,
-        textTransform: "none",
-        fontSize: "1rem",
-      }}
-    >
-      🍎 Sign up with Apple
-    </Button>
-
-    {/* Divider */}
     <Box sx={{ display: "flex", alignItems: "center", my: 3 }}>
       <Box sx={{ flex: 1, height: "1px", background: "#ddd" }} />
       <Typography sx={{ mx: 2, opacity: 0.7 }}>OR</Typography>
       <Box sx={{ flex: 1, height: "1px", background: "#ddd" }} />
     </Box>
 
-    {/* Fields */}
-    <TextField label="Username" fullWidth sx={{ mb: 2 }} />
-    <TextField type="password" label="Password" fullWidth sx={{ mb: 3 }} />
+    <TextField label="Username" fullWidth sx={{ mb: 2 }} onChange={(e) => setUserName(e.target.value)} />
+    <TextField type="password" label="Password" fullWidth sx={{ mb: 3 }} onChange={(e) => setPassword(e.target.value)} />
+    
+    {
+      !isLogin && (
+        <TextField type="email" label="Email" fullWidth sx={{ mb: 3 }} onChange={(e) => setEmail(e.target.value)} />
+      )
+    }
 
-    {/* Login button */}
     <Button
       fullWidth
       sx={{
@@ -155,8 +146,9 @@ export function Authentication() {
         mb: 3,
         "&:hover": { backgroundColor: "#333" },
       }}
+      onClick={isLogin ? handleUserLogin : handleUserRegister}
     >
-      Log in
+      {isLogin ? "Log in" : "Sign up"}
     </Button>
 
     <Typography sx={{ mb: 2, opacity: 0.7 }}>
@@ -172,8 +164,9 @@ export function Authentication() {
         textTransform: "none",
         fontSize: "1rem",
       }}
+      onClick={() => setIsLogin(!isLogin)}
     >
-      Sign up
+      {isLogin ? "Sign up" : "Log in"}
     </Button>
   </Box>
 </Grid>
