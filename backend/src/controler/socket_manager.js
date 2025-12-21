@@ -19,14 +19,15 @@ export const connectSocket = (server) => {
         console.log("New connection: ", socket.id);
 
 
-        socket.on("join", (path) => {
+        socket.on("join-call", (path) => {
             if(!connection[path]) {
                 connection[path] = [];
             }
             connection[path].forEach(element => {
-                io.to(element).emit("new user joined join");
+                io.to(element).emit("user-joined", socket.id, path);
             });
             
+            io.to(socket.id).emit("joined-list", connection[path], path);
             connection[path].push(socket.id);
         });
 
@@ -41,6 +42,21 @@ export const connectSocket = (server) => {
                 }
             });
         })
+
+        socket.on("disconect", (path) => {
+
+            if(connection[path]) {
+                connection[path] = connection[path].filter(id => id !== socket.id);
+                connection[path].forEach(element => {
+                    io.to(element).emit("user-left", socket.id);
+                });
+
+                if(connection[path].length === 0) {
+                    delete connection[path];
+                }
+            }
+
+        });
 
     });
 }
