@@ -19,16 +19,18 @@ export const connectSocket = (server) => {
         console.log("New connection: ", socket.id);
 
 
-        socket.on("join-call", (path) => {
+        socket.on("join-call", (path, userName) => {
             if(!connection[path]) {
                 connection[path] = [];
+                users[path] = [];
             }
             connection[path].forEach(element => {
-                io.to(element).emit("user-joined", socket.id, path);
+                io.to(element).emit("user-joined", socket.id, userName);
             });
             
             io.to(socket.id).emit("joined-list", connection[path], path);
             connection[path].push(socket.id);
+            users[path].push({id: socket.id, name: userName});
         });
 
         socket.on("signal", (toId, messages) => {
@@ -44,6 +46,8 @@ export const connectSocket = (server) => {
         })
 
         socket.on("disconect", (path) => {
+
+            console.log("Disconnected: ", socket.id);
 
             if(connection[path]) {
                 connection[path] = connection[path].filter(id => id !== socket.id);

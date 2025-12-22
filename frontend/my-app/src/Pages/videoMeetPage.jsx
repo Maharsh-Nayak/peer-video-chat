@@ -1,19 +1,23 @@
-import VideoCameraFrontIcon from "@mui/icons-material/VideoCameraFront";
-import MicIcon from "@mui/icons-material/Mic";
-import VideocamOffIcon from "@mui/icons-material/VideocamOff";
-import MicOffIcon from "@mui/icons-material/MicOff";
+import React, { useEffect, useRef, useState } from "react";
+import { io } from "socket.io-client";
 import {
   Button,
   TextField,
   IconButton,
-  ButtonGroup,
   Card,
-  CardContent,
   Typography,
-  Stack,
+  Box,
+  Tooltip,
 } from "@mui/material";
-import React, { useEffect, useRef, useState } from "react";
-import { connect, io } from "socket.io-client";
+
+// Icons
+import VideoCameraFrontIcon from "@mui/icons-material/VideoCameraFront";
+import MicIcon from "@mui/icons-material/Mic";
+import VideocamOffIcon from "@mui/icons-material/VideocamOff";
+import MicOffIcon from "@mui/icons-material/MicOff";
+import CallEndIcon from "@mui/icons-material/CallEnd";
+import ChatIcon from "@mui/icons-material/Chat";
+import ScreenShareIcon from "@mui/icons-material/ScreenShare";
 
 var connections = {};
 
@@ -38,10 +42,18 @@ const peerConnectionConfig = {
 };
 
 const MeetEntery = () => {
+
   let [isVideoAvailable, setIsVideoAvailable] = useState(true);
-  let [isAudioAvailable, setIsAudioAvailable] = useState(true);
   let [isVideoOn, setIsVideoOn] = useState(true);
+  let [videoStream, setVideoStream] = useState([]);
+  let localVideoRef = useRef();
+  let videoRef = useRef([]);
+  let [videos, setVideos] = useState([]);
+  
+  let [isAudioAvailable, setIsAudioAvailable] = useState(true);
   let [isAudioOn, setIsAudioOn] = useState(true);
+  const [audioStream, setAudioStream] = useState([]);
+  
   let [isScreenAvailable, setIsScreenAvailable] = useState(false);
   let [isScreenOn, setIsScreenOn] = useState(false);
 
@@ -49,8 +61,6 @@ const MeetEntery = () => {
   let [joined, setJoined] = useState(false);
   let [userName, setUserName] = useState("");
 
-  const [videoStream, setVideoStream] = useState([]);
-  const [audioStream, setAudioStream] = useState([]);
   const [screenStream, setScreenStream] = useState(null);
 
   let [showModal, setShowModal] = useState();
@@ -59,13 +69,32 @@ const MeetEntery = () => {
   let [message, setMessage] = useState("");
   let [notifications, setNotifications] = useState(0);
 
-  let localVideoRef = useRef();
   let socketRef = useRef();
   let socketIdRef = useRef();
 
+  let [remoteUserNames, setRemoteUserNames] = useState([]);
+
   let gotMessageFromServer = (fromId, message) => {
-    console.log("Got message from server", fromId, message);
-  };
+    var signal = JSON.parse(message)
+
+    if (fromId !== socketIdRef.current) {
+      if (signal.sdp) {
+        connections[fromId].setRemoteDescription(new RTCSessionDescription(signal.sdp)).then(() => {
+          if (signal.sdp.type === 'offer') {
+            connections[fromId].createAnswer().then((description) => {
+              connections[fromId].setLocalDescription(description).then(() => {
+                socketRef.current.emit('signal', fromId, JSON.stringify({ 'sdp': connections[fromId].localDescription }))
+              }).catch(e => console.log(e))
+            }).catch(e => console.log(e))
+          }
+        }).catch(e => console.log(e))
+      }
+
+      if (signal.ice) {
+        connections[fromId].addIceCandidate(new RTCIceCandidate(signal.ice)).catch(e => console.log(e))
+      }
+    }
+  }
 
   let addMesaage = (id, message) => {
     setMessages((oldMessages) => [...oldMessages, { id, message }]);
@@ -77,19 +106,22 @@ const MeetEntery = () => {
     socketRef.current.on("signal", gotMessageFromServer);
 
     socketRef.current.on("connect", () => {
-      socketRef.current.emit("join-call", window.location.href);
+      socketRef.current.emit("join-call", window.location.href, userName);
       socketIdRef.current = socketRef.current.id;
 
       socketRef.current.on("chat-message", addMesaage);
 
       socketRef.current.on("user-left", (id) => {
         console.log("User left");
-        setVideoStream((prevStreams) => {
-          prevStreams.filter((stream) => stream.id !== id);
-        });
+        setVideos((prevStreams) => prevStreams.filter((video) => video.socketId !== id));
+        videoRef.current = videoRef.current.filter((video => video.socketId !== id));
+        if (connections[id]) {
+          connections[id].close();
+          delete connections[id];
+        }
       });
 
-      socketRef.current.on("user-joined", (id, client) => {
+      socketRef.current.on("user-joined", (id, userName) => {
         console.log("User joined: ", id);
 
         connections[id] = new RTCPeerConnection(peerConnectionConfig);
@@ -106,20 +138,21 @@ const MeetEntery = () => {
         };
 
         connections[id].onaddstream = (event) => {
-          let videoExists = videoStream.current.find(
+          console.log("Video ref : " , videoRef.current)
+          let videoExists = videoRef.current.find(
             (video) => video.socketId === id
           );
 
           if (videoExists) {
             console.log("FOUND EXISTING");
 
-            setVideoStream((videos) => {
+            setVideos((videos) => {
               const updatedVideos = videos.map((video) =>
                 video.socketId === id
                   ? { ...video, stream: event.stream }
                   : video
               );
-              videoStream.current = updatedVideos;
+              videoRef.current = updatedVideos;
               return updatedVideos;
             });
           } else {
@@ -131,12 +164,14 @@ const MeetEntery = () => {
               playsinline: true,
             };
 
-            setVideoStream((videos) => {
+            setVideos((videos) => {
               const updatedVideos = [...videos, newVideo];
-              videoStream.current = updatedVideos;
+              videoRef.current = updatedVideos;
               return updatedVideos;
             });
           }
+
+          console.log("CURRENT VIDEOS: ", videos);
         };
 
         if (window.localStream !== undefined && window.localStream !== null) {
@@ -147,6 +182,8 @@ const MeetEntery = () => {
           window.localStream = blackSilence();
           connections[id].addStream(window.localStream);
         }
+
+        setRemoteUserNames((prevNames) => [...prevNames, {id: id, name: userName}]);
       });
 
       socketRef.current.on("joined-list", (idList, client) => {
@@ -167,19 +204,19 @@ const MeetEntery = () => {
           };
 
           connections[idList[id]].onaddstream = (event) => {
-            let videoExists = videoStream.current.find(
+            let videoExists = videoRef.current.find(
               (video) => video.socketId === idList[id]
             );
 
             if (videoExists) {
               console.log("FOUND EXISTING");
-              setVideoStream((videos) => {
+              setVideos((videos) => {
                 const updatedVideos = videos.map((video) =>
                   video.socketId === idList[id]
                     ? { ...video, stream: event.stream }
                     : video
                 );
-                videoStream.current = updatedVideos;
+                videoRef.current = updatedVideos;
                 return updatedVideos;
               });
             } else {
@@ -190,9 +227,9 @@ const MeetEntery = () => {
                 autoplay: true,
                 playsinline: true,
               };
-              setVideoStream((videos) => {
+              setVideos((videos) => {
                 const updatedVideos = [...videos, newVideo];
-                videoStream.current = updatedVideos;
+                videoRef.current = updatedVideos;
                 return updatedVideos;
               });
             }
@@ -388,138 +425,175 @@ const MeetEntery = () => {
     getMedia();
   };
 
-  return (
-    <>
-      {!joined ? (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            padding: "20px",
-            background: "#f4f5f7",
-          }}
-        >
-          <Card
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              padding: "20px",
-              borderRadius: "14px",
-              width: "80%",
-              maxWidth: "1200px",
-              boxShadow: "0px 4px 20px rgba(0,0,0,0.12)",
-            }}
-          >
-            <div
-              style={{
-                flex: 2,
-                marginRight: "20px",
-                borderRadius: "12px",
-                overflow: "hidden",
-                position: "relative",
-                background: "#000",
-                height: "400px",
-              }}
-            >
-              <video
-                ref={localVideoRef}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                }}
-                autoPlay
-                muted
-              />
+  let leaveCall = () => {
+    socketRef.current.emit("disconect", window.location.href);
+    
+    if (window.localStream) {
+      window.localStream.getTracks().forEach((track) => track.stop());
+    }
+    
+    for (let id in connections) {
+      connections[id].close();
+      delete connections[id];
+    }
 
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "15px",
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  display: "flex",
-                  gap: "15px",
-                  background: "rgba(0,0,0,0.5)",
-                  padding: "10px 20px",
-                  borderRadius: "30px",
-                }}
-              >
-                <IconButton
-                  style={{ color: "white" }}
-                  onClick={() => {
-                    toggleMic();
-                  }}
-                >
+    window.location.reload();
+
+    setJoined(false);
+    setVideos([]);
+  }
+
+  const mainContainerStyle = {
+    height: "100vh",
+    width: "100vw",
+    backgroundColor: "#121212",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  };
+
+  const videoGridStyle = {
+    flex: 1,
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))",
+    gap: "12px",
+    padding: "20px",
+    alignContent: "center",
+    justifyContent: "center",
+    overflowY: "auto",
+  };
+
+  const videoWrapperStyle = {
+    position: "relative",
+    borderRadius: "16px",
+    overflow: "hidden",
+    aspectRatio: "16/9",
+    backgroundColor: "#1e1e1e",
+    border: "2px solid #333",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+  };
+
+  const nameTagStyle = {
+    position: "absolute",
+    bottom: "12px",
+    left: "12px",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backdropFilter: "blur(4px)",
+    color: "white",
+    padding: "4px 12px",
+    borderRadius: "8px",
+    fontSize: "0.85rem",
+    fontWeight: "500",
+  };
+
+  const bottomBarStyle = {
+    height: "80px",
+    backgroundColor: "#1a1a1a",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "20px",
+    borderTop: "1px solid #333",
+  };
+
+  return (
+    <Box sx={mainContainerStyle}>
+      {!joined ? (
+        // --- PRE-JOIN SCREEN ---
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", background: "linear-gradient(135deg, #1e3a8a 0%, #1e1b4b 100%)" }}>
+          <Card sx={{ display: "flex", p: 4, borderRadius: 4, width: "90%", maxWidth: "1000px", boxShadow: 24 }}>
+            <Box sx={{ flex: 1.5, mr: 3, borderRadius: 3, overflow: "hidden", position: "relative", bgcolor: "black", height: "400px" }}>
+              <video ref={localVideoRef} autoPlay muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
+              <Box sx={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 2, bgcolor: "rgba(0,0,0,0.7)", p: 1.5, borderRadius: 10 }}>
+                <IconButton onClick={toggleMic} sx={{ color: isAudioOn ? "white" : "#ff5252" }}>
                   {isAudioOn ? <MicIcon /> : <MicOffIcon />}
                 </IconButton>
-
-                <IconButton
-                  style={{ color: "white" }}
-                  onClick={() => {
-                    toggleVideo();
-                  }}
-                >
+                <IconButton onClick={toggleVideo} sx={{ color: isVideoOn ? "white" : "#ff5252" }}>
                   {isVideoOn ? <VideoCameraFrontIcon /> : <VideocamOffIcon />}
                 </IconButton>
-              </div>
-            </div>
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                gap: "20px",
-              }}
-            >
-              <Typography variant="h4" fontWeight="600">
+              </Box>
+            </Box>
+            
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 3 }}>
+              <Typography variant="h4" fontWeight="700" color="primary.main">Ready to join?</Typography>
+              <TextField 
+                label="What's your name?" 
+                variant="filled" 
+                fullWidth 
+                value={userName} 
+                onChange={(e) => setUserName(e.target.value)} 
+                sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
+              />
+              <Button variant="contained" size="large" onClick={connect} sx={{ py: 1.5, borderRadius: 2, fontWeight: "bold", fontSize: "1.1rem" }}>
                 Join Meeting
-              </Typography>
-
-              {askUserName ? (
-                <TextField
-                  label="Enter your name"
-                  variant="outlined"
-                  fullWidth
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                />
-              ) : null}
-
-              <Button variant="contained" size="large" fullWidth onClick={connect}>
-                Join
               </Button>
-            </div>
+            </Box>
           </Card>
-        </div>
+        </Box>
       ) : (
-        <div>
-          <video ref={localVideoRef} autoPlay muted></video>
+        // --- IN-CALL SCREEN ---
+        <>
+          <Box sx={videoGridStyle}>
+            {/* Local User */}
+            <Box sx={videoWrapperStyle}>
+              <video ref={localVideoRef} autoPlay muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
+              <Box sx={nameTagStyle}>You (Me)</Box>
+            </Box>
 
-          <div>
-            {videoStream.map((video) => (
-                <div key={video.socketId}>
-                    <video
-
-                        data-socket={video.socketId}
-                        ref={ref => {
-                            if (ref && video.stream) {
-                                ref.srcObject = video.stream;
-                            }
-                        }}
-                        autoPlay
-                    >
-                    </video>
-                </div>
-
+            {/* Remote Users */}
+            {videos.map((video) => (
+              <Box key={video.socketId} sx={videoWrapperStyle}>
+                <video
+                  ref={(ref) => { if (ref && video.stream) ref.srcObject = video.stream; }}
+                  autoPlay
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+                <Box sx={nameTagStyle}>
+                  Participant: {remoteUserNames.find(user => user.id === video.socketId)?.name || "Unknown"}
+                </Box>
+              </Box>
             ))}
-          </div>
-        </div>
+          </Box>
+
+          {/* Persistent Control Bar */}
+          <Box sx={bottomBarStyle}>
+            <Tooltip title={isAudioOn ? "Mute" : "Unmute"}>
+              <IconButton onClick={toggleMic} sx={{ bgcolor: isAudioOn ? "#333" : "#ea4335", color: "white", "&:hover": { bgcolor: isAudioOn ? "#444" : "#d93025" } }}>
+                {isAudioOn ? <MicIcon /> : <MicOffIcon />}
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title={isVideoOn ? "Stop Video" : "Start Video"}>
+              <IconButton onClick={toggleVideo} sx={{ bgcolor: isVideoOn ? "#333" : "#ea4335", color: "white", "&:hover": { bgcolor: isVideoOn ? "#444" : "#d93025" } }}>
+                {isVideoOn ? <VideoCameraFrontIcon /> : <VideocamOffIcon />}
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Share Screen">
+              <IconButton sx={{ bgcolor: "#333", color: "white" }}>
+                <ScreenShareIcon />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Chat">
+              <IconButton sx={{ bgcolor: "#333", color: "white" }}>
+                <ChatIcon />
+              </IconButton>
+            </Tooltip>
+
+            <Button
+              variant="contained"
+              color="error"
+              startIcon={<CallEndIcon />}
+              onClick={leaveCall}
+              sx={{ borderRadius: "20px", px: 4, fontWeight: "bold" }}
+            >
+              Leave
+            </Button>
+          </Box>
+        </>
       )}
-    </>
+    </Box>
   );
 };
 
