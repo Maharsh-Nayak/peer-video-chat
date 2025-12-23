@@ -18,6 +18,7 @@ import MicOffIcon from "@mui/icons-material/MicOff";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import ChatIcon from "@mui/icons-material/Chat";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
+import { use } from "react";
 
 var connections = {};
 
@@ -272,12 +273,6 @@ const MeetEntery = () => {
         setAudioStream(null);
       }
 
-      if (navigator.mediaDevices.getDisplayMedia) {
-        setIsScreenAvailable(true);
-      } else {
-        setIsScreenAvailable(false);
-      }
-
       if (isVideoAvailable || isAudioAvailable) {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: isVideoAvailable,
@@ -418,6 +413,71 @@ const MeetEntery = () => {
 
   function toggleVideo() {
     setIsVideoOn(!isVideoOn);
+  }
+
+  let toggleScreen = () => {
+    setIsScreenOn(!isScreenOn);
+  };
+
+  useEffect(() => {
+      getUserScreen();
+  }, [isScreenOn]);
+
+  let getUserScreen = () => {
+    if (isScreenOn) {
+      navigator.mediaDevices
+        .getDisplayMedia({ video: true, audio: true })
+        .then(getUserScreenSuccess)
+        .catch((e) => console.log(e));
+    }
+  };
+
+  let getUserScreenSuccess = (stream) => {
+    try{
+      window.localStream.getTracks().forEach((track) => {
+        track.stop();
+      });
+    }catch(e){
+      console.log(e);
+    }
+
+    window.localStream = stream;
+    localVideoRef.current.srcObject = stream;
+
+    for (let id in connections) {
+      if (id == socketIdRef.current) continue;
+
+      connections[id].addStream(window.localStream);
+      connections[id].createOffer().then((description) => {
+        connections[id].setLocalDescription(description).then(() => {
+          socketRef.current.emit(
+            "signal",
+            id,
+            JSON.stringify({ sdp: connections[id].localDescription })
+          );
+        });
+      });
+
+      stream.getTracks().forEach(
+        (track) =>
+          (track.onended = () => {
+            setIsScreenOn(false);
+
+            try{
+              let tracks = localVideoRef.current.srcObject.getTracks();
+              tracks.forEach((track) => track.stop());
+            }catch(e){
+              console.log(e);
+            }
+
+            let newStream = new MediaStream([videoOffStream(), micOffStream()]);
+            localVideoRef.current.srcObject = newStream;
+            window.localStream = newStream;
+
+            getUserMedia();
+          })
+      );
+    }
   }
 
   let connect = () => {
@@ -570,7 +630,7 @@ const MeetEntery = () => {
             </Tooltip>
 
             <Tooltip title="Share Screen">
-              <IconButton sx={{ bgcolor: "#333", color: "white" }}>
+              <IconButton sx={{ bgcolor: "#333", color: "white" }} onClick={toggleScreen}>
                 <ScreenShareIcon />
               </IconButton>
             </Tooltip>
