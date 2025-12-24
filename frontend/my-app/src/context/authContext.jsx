@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 export const AuthContext = createContext({});
 
 const client = axios.create({
-  baseURL: "http://localhost:5000/api/user",
+  baseURL: "https://helpful-puppy-444ddb.netlify.app/api/user",
 });
 
 export const AuthProvider = ({ children }) => {
@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleGoogleLogin = async (token) => {
         try {
-            const response = await axios.post("http://localhost:5000/api/google-login", {
+            const response = await axios.post("https://helpful-puppy-444ddb.netlify.app/api/google-login", {
                 token: token // Send the credential string from Google
             });
             
