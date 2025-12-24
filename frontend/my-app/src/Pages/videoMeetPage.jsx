@@ -8,6 +8,9 @@ import {
   Typography,
   Box,
   Tooltip,
+  Paper,
+  Avatar,
+  Fade,
 } from "@mui/material";
 
 // Icons
@@ -18,7 +21,7 @@ import MicOffIcon from "@mui/icons-material/MicOff";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import ChatIcon from "@mui/icons-material/Chat";
 import ScreenShareIcon from "@mui/icons-material/ScreenShare";
-import { use } from "react";
+import SendIcon from "@mui/icons-material/Send";
 
 var connections = {};
 
@@ -38,9 +41,15 @@ var connections = {};
 //
 // Summary: This config allows WebRTC to perform NAT traversal and establish
 // a real-time peer-to-peer connection using the public STUN server.
+
+
 const peerConnectionConfig = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
+
+const THEME_BG = "#111214";
+const THEME_SURFACE = "#1c1f26";
+const ACCENT_COLOR = "#3d5afe";
 
 const MeetEntery = () => {
 
@@ -55,7 +64,6 @@ const MeetEntery = () => {
   let [isAudioOn, setIsAudioOn] = useState(true);
   const [audioStream, setAudioStream] = useState([]);
   
-  let [isScreenAvailable, setIsScreenAvailable] = useState(false);
   let [isScreenOn, setIsScreenOn] = useState(false);
 
   let [askUserName, setAskUserName] = useState(true);
@@ -74,6 +82,16 @@ const MeetEntery = () => {
   let socketIdRef = useRef();
 
   let [remoteUserNames, setRemoteUserNames] = useState([]);
+
+  let peopleSize = 12;
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setAskUserName(false);
+      setUserName(storedUser);
+    }
+  }, []); 
 
   let gotMessageFromServer = (fromId, message) => {
     var signal = JSON.parse(message)
@@ -97,8 +115,9 @@ const MeetEntery = () => {
     }
   }
 
-  let addMesaage = (id, message) => {
-    setMessages((oldMessages) => [...oldMessages, { id, message }]);
+  let addMesaage = (id, username, message) => {
+    setMessages((oldMessages) => [...oldMessages, {id, username, message }]);
+    console.log("New message received: ", messages);
   };
 
   let connectToSocketServer = () => {
@@ -110,7 +129,7 @@ const MeetEntery = () => {
       socketRef.current.emit("join-call", window.location.href, userName);
       socketIdRef.current = socketRef.current.id;
 
-      socketRef.current.on("chat-message", addMesaage);
+      socketRef.current.on("message", addMesaage);
 
       socketRef.current.on("user-left", (id) => {
         console.log("User left");
@@ -386,6 +405,16 @@ const MeetEntery = () => {
     );
   };
 
+  function handleSendMessage() {
+    if (message.trim() === "") return;
+    socketRef.current.emit("message", window.location.href, message);
+    setMessages((oldMessages) => [
+      ...oldMessages,
+      { id: socketIdRef.current, message: message },
+    ]);
+    setMessage("");
+  }
+
   function videoOffStream() {
     let blanckScreen = Object.assign(document.createElement("canvas"), {
       width: 640,
@@ -557,96 +586,256 @@ const MeetEntery = () => {
   };
 
   return (
-    <Box sx={mainContainerStyle}>
+    <Box sx={{ height: "100vh", width: "100vw", bgcolor: THEME_BG, color: "white", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      
       {!joined ? (
-        // --- PRE-JOIN SCREEN ---
-        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", background: "linear-gradient(135deg, #1e3a8a 0%, #1e1b4b 100%)" }}>
-          <Card sx={{ display: "flex", p: 4, borderRadius: 4, width: "90%", maxWidth: "1000px", boxShadow: 24 }}>
-            <Box sx={{ flex: 1.5, mr: 3, borderRadius: 3, overflow: "hidden", position: "relative", bgcolor: "black", height: "400px" }}>
+        /* --- PRE-JOIN LOBBY --- */
+        <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", p: 3, background: "radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)" }}>
+          <Card sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, width: "100%", maxWidth: "1100px", borderRadius: 6, bgcolor: "rgba(30, 30, 30, 0.7)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 20px 50px rgba(0,0,0,0.5)", overflow: "hidden" }}>
+            
+            {/* Video Preview Side */}
+            <Box sx={{ flex: 1.4, position: "relative", bgcolor: "#000", minHeight: "450px" }}>
               <video ref={localVideoRef} autoPlay muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
-              <Box sx={{ position: "absolute", bottom: 20, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 2, bgcolor: "rgba(0,0,0,0.7)", p: 1.5, borderRadius: 10 }}>
-                <IconButton onClick={toggleMic} sx={{ color: isAudioOn ? "white" : "#ff5252" }}>
+              
+              {!isVideoOn && (
+                <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#1a1a1a" }}>
+                  <Avatar sx={{ width: 120, height: 120, bgcolor: ACCENT_COLOR, fontSize: "3rem" }}>{userName[0]?.toUpperCase() || "?"}</Avatar>
+                </Box>
+              )}
+
+              <Box sx={{ position: "absolute", bottom: 24, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 2, p: 1, borderRadius: 10, bgcolor: "rgba(0,0,0,0.4)", backdropFilter: "blur(10px)" }}>
+                <IconButton onClick={toggleMic} sx={{ bgcolor: isAudioOn ? "rgba(255,255,255,0.1)" : "#ea4335", color: "white", "&:hover": { bgcolor: isAudioOn ? "rgba(255,255,255,0.2)" : "#d93025" } }}>
                   {isAudioOn ? <MicIcon /> : <MicOffIcon />}
                 </IconButton>
-                <IconButton onClick={toggleVideo} sx={{ color: isVideoOn ? "white" : "#ff5252" }}>
+                <IconButton onClick={toggleVideo} sx={{ bgcolor: isVideoOn ? "rgba(255,255,255,0.1)" : "#ea4335", color: "white", "&:hover": { bgcolor: isVideoOn ? "rgba(255,255,255,0.2)" : "#d93025" } }}>
                   {isVideoOn ? <VideoCameraFrontIcon /> : <VideocamOffIcon />}
                 </IconButton>
               </Box>
             </Box>
-            
-            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", gap: 3 }}>
-              <Typography variant="h4" fontWeight="700" color="primary.main">Ready to join?</Typography>
+
+            {/* Form Side */}
+            <Box sx={{ flex: 1, p: 6, display: "flex", flexDirection: "column", justifyContent: "center", gap: 4 }}>
+              <Box>
+                <Typography variant="h4" fontWeight="800" sx={{ mb: 1, background: "linear-gradient(to right, #fff, #94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Ready to join?</Typography>
+                <Typography variant="body1" color="grey.400">Check your audio and video settings.</Typography>
+              </Box>
+
               <TextField 
-                label="What's your name?" 
-                variant="filled" 
-                fullWidth 
-                value={userName} 
-                onChange={(e) => setUserName(e.target.value)} 
-                sx={{ bgcolor: "#f5f5f5", borderRadius: 1 }}
+                fullWidth label="Your Name" variant="filled" value={userName} onChange={(e) => setUserName(e.target.value)}
+                sx={{ bgcolor: "rgba(255,255,255,0.05)", borderRadius: 2, "& .MuiInputBase-root": { color: "white" }, "& .MuiInputLabel-root": { color: "grey.500" } }}
               />
-              <Button variant="contained" size="large" onClick={connect} sx={{ py: 1.5, borderRadius: 2, fontWeight: "bold", fontSize: "1.1rem" }}>
-                Join Meeting
+
+              <Button variant="contained" size="large" onClick={connect} disabled={!userName} sx={{ py: 2, borderRadius: 3, fontWeight: "bold", bgcolor: ACCENT_COLOR, fontSize: "1.1rem", textTransform: "none", boxShadow: `0 8px 20px ${ACCENT_COLOR}44` }}>
+                Enter Meeting
               </Button>
             </Box>
           </Card>
         </Box>
       ) : (
-        // --- IN-CALL SCREEN ---
+        /* --- ACTIVE CALL INTERFACE --- */
         <>
-          <Box sx={videoGridStyle}>
-            {/* Local User */}
-            <Box sx={videoWrapperStyle}>
-              <video ref={localVideoRef} autoPlay muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} />
-              <Box sx={nameTagStyle}>You (Me)</Box>
-            </Box>
+         <Box sx={{ flex: 1, display: "flex", p: 2, gap: 2, overflow: "hidden", height: "100vh" }}>
+  
+  {/* Dynamic Video Grid Container */}
+  <Box 
+    sx={{ 
+      flex: 1, 
+      display: "grid", 
+      p: 1, // Reduced padding to give videos more room
+      gap: 2, 
+      gridTemplateColumns: {
+        xs: "1fr",
+        // Logic: If sidebar is open, allow tiles to get smaller (min 300px) 
+        // to prevent forcing a vertical scroll too early
+        sm: (videos.length + 1) <= 1 ? "1fr" : 
+            (videos.length + 1) === 2 ? "1fr 1fr" : 
+            `repeat(auto-fit, minmax(${showModal ? '300px' : '400px'}, 1fr))`
+      },
+      gridAutoRows: "min-content",
+      alignContent: "center", 
+      justifyContent: "center",
+      // Important: Ensure this container doesn't grow past parent
+      overflow: "hidden", 
+      width: "100%",
+    }}
+  >
+    {/* Local Participant Tile */}
+    <Paper 
+      elevation={4}
+      sx={{ 
+        position: "relative", 
+        borderRadius: 4, 
+        overflow: "hidden", 
+        bgcolor: THEME_SURFACE,
+        aspectRatio: "16/9",
+        border: "1px solid rgba(255,255,255,0.1)",
+        // Prevents the video from becoming too tall and causing scroll
+        maxHeight: "100%", 
+      }}
+    >
+      <video 
+        ref={localVideoRef} 
+        autoPlay 
+        muted 
+        playsInline
+        style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }} 
+      />
+      <Box sx={{ position: "absolute", bottom: 12, left: 12, px: 1.5, py: 0.6, borderRadius: 2, bgcolor: "rgba(32, 33, 36, 0.75)", backdropFilter: "blur(10px)", color: "white", fontSize: "0.75rem" }}>
+        You (Me)
+      </Box>
+    </Paper>
 
-            {/* Remote Users */}
-            {videos.map((video) => (
-              <Box key={video.socketId} sx={videoWrapperStyle}>
-                <video
-                  ref={(ref) => { if (ref && video.stream) ref.srcObject = video.stream; }}
-                  autoPlay
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                />
-                <Box sx={nameTagStyle}>
-                  Participant: {remoteUserNames.find(user => user.id === video.socketId)?.name || "Unknown"}
-                </Box>
-              </Box>
-            ))}
-          </Box>
+    {/* Remote Participant Tiles */}
+    {videos.map((v) => (
+      <Paper 
+        key={v.socketId} 
+        elevation={4}
+        sx={{ 
+          position: "relative", borderRadius: 4, overflow: "hidden", bgcolor: THEME_SURFACE, 
+          aspectRatio: "16/9", border: "1px solid rgba(255,255,255,0.1)"
+        }}
+      >
+        <video
+          ref={(el) => { if (el && v.stream) el.srcObject = v.stream; }}
+          autoPlay
+          playsInline
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+        <Box sx={{ position: "absolute", bottom: 12, left: 12, px: 1.5, py: 0.6, borderRadius: 2, bgcolor: "rgba(32, 33, 36, 0.75)", backdropFilter: "blur(10px)", color: "white", fontSize: "0.75rem" }}>
+          {remoteUserNames.find(u => u.id === v.socketId)?.name || "Guest"}
+        </Box>
+      </Paper>
+    ))}
+  </Box>
 
-          {/* Persistent Control Bar */}
-          <Box sx={bottomBarStyle}>
+  {/* Sidebar remains the same - Paper will naturally push the flex: 1 Box above */}
+  {showModal && (
+    <Fade in={showModal}>
+      <Paper sx={{ width: 360, display: "flex", flexDirection: "column", borderRadius: 4, bgcolor: THEME_SURFACE, border: "1px solid rgba(255,255,255,0.1)", overflow: "hidden" }}>
+        <Box sx={{ p: 2, borderBottom: "1px solid rgba(255,255,255,0.1)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography fontWeight="700">Messages</Typography>
+                    <IconButton size="small" onClick={() => setShowModal(false)} sx={{ color: "grey.500" }}>✕</IconButton>
+                  </Box>
+                  
+                  <Box 
+                    sx={{ 
+                      flex: 1, 
+                      p: 2, 
+                      overflowY: "auto", 
+                      display: "flex", 
+                      flexDirection: "column", 
+                      gap: 1.5, // Slightly tighter gap for conversation flow
+                      bgcolor: "transparent" 
+                    }}
+                  >
+                    {messages.map((m, idx) => {
+                      const isMe = m.id === socketIdRef.current;
+                      
+                      return (
+                        <Box 
+                          key={idx} 
+                          sx={{ 
+                            alignSelf: isMe ? "flex-end" : "flex-start", 
+                            maxWidth: "75%", // Narrower bubbles are easier to read
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: isMe ? "flex-end" : "flex-start"
+                          }}
+                        >
+                          {/* Username Label */}
+                          {!isMe && (
+                            <Typography 
+                              variant="caption" 
+                              sx={{ color: "rgba(255,255,255,0.5)", ml: 1, mb: 0.5, fontWeight: 'bold' }}
+                            >
+                              {m.username}
+                            </Typography>
+                          )}
+
+                          <Paper 
+                            elevation={0}
+                            sx={{ 
+                              p: "10px 16px", 
+                              borderRadius: 3, 
+                              // Custom border radius to create a "bubble" tail
+                              borderBottomRightRadius: isMe ? 0 : 12,
+                              borderBottomLeftRadius: isMe ? 12 : 0,
+                              bgcolor: isMe ? ACCENT_COLOR : "rgba(255,255,255,0.12)", 
+                              color: "white",
+                              boxShadow: isMe ? "0 2px 8px rgba(0,0,0,0.2)" : "none"
+                            }}
+                          >
+                            <Typography variant="body1" sx={{ lineHeight: 1.4, wordBreak: "break-word" }}>
+                              {m.message}
+                            </Typography>
+                            
+                            {/* Timestamp (Optional but recommended) */}
+                            <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                display: "block", 
+                                textAlign: "right", 
+                                fontSize: "0.65rem", 
+                                mt: 0.5, 
+                                opacity: 0.7 
+                              }}
+                            >
+                              {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </Typography>
+                          </Paper>
+                        </Box>
+                      );
+                    })}
+                  </Box>
+
+                  <Box sx={{ p: 2, display: "flex", gap: 1 }}>
+                    <TextField 
+                      fullWidth size="small" placeholder="Send a message..." value={message} onChange={(e) => setMessage(e.target.value)}
+                      sx={{ bgcolor: "rgba(255,255,255,0.05)", borderRadius: 2, input: { color: "white", fontSize: "0.9rem" } }}
+                    />
+                    <IconButton sx={{ bgcolor: ACCENT_COLOR, color: "white", "&:hover": { bgcolor: "#2a4ad9" } }}>
+                      <SendIcon fontSize="small" onClick={handleSendMessage} />
+                    </IconButton>
+                  </Box>
+      </Paper>
+    </Fade>
+  )}
+</Box>
+
+          {/* Control Bar */}
+          <Box sx={{ height: 90, display: "flex", alignItems: "center", justifyContent: "center", gap: 2, px: 4, bgcolor: "rgba(17, 18, 20, 0.9)", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            
             <Tooltip title={isAudioOn ? "Mute" : "Unmute"}>
-              <IconButton onClick={toggleMic} sx={{ bgcolor: isAudioOn ? "#333" : "#ea4335", color: "white", "&:hover": { bgcolor: isAudioOn ? "#444" : "#d93025" } }}>
+              <IconButton onClick={toggleMic} sx={{ width: 52, height: 52, bgcolor: isAudioOn ? "rgba(255,255,255,0.08)" : "#ea4335", color: "white", border: "1px solid rgba(255,255,255,0.1)" }}>
                 {isAudioOn ? <MicIcon /> : <MicOffIcon />}
               </IconButton>
             </Tooltip>
 
             <Tooltip title={isVideoOn ? "Stop Video" : "Start Video"}>
-              <IconButton onClick={toggleVideo} sx={{ bgcolor: isVideoOn ? "#333" : "#ea4335", color: "white", "&:hover": { bgcolor: isVideoOn ? "#444" : "#d93025" } }}>
+              <IconButton onClick={toggleVideo} sx={{ width: 52, height: 52, bgcolor: isVideoOn ? "rgba(255,255,255,0.08)" : "#ea4335", color: "white", border: "1px solid rgba(255,255,255,0.1)" }}>
                 {isVideoOn ? <VideoCameraFrontIcon /> : <VideocamOffIcon />}
               </IconButton>
             </Tooltip>
 
+            {/* <Box sx={{ width: 1, height: 32, mx: 1, bgcolor: "rgba(255,255,255,0.1)" }} /> */}
+
             <Tooltip title="Share Screen">
-              <IconButton sx={{ bgcolor: "#333", color: "white" }} onClick={toggleScreen}>
+              <IconButton onClick={toggleScreen} sx={{ width: 52, height: 52, bgcolor: isScreenOn ? ACCENT_COLOR : "rgba(255,255,255,0.08)", color: "white" }}>
                 <ScreenShareIcon />
               </IconButton>
             </Tooltip>
 
             <Tooltip title="Chat">
-              <IconButton sx={{ bgcolor: "#333", color: "white" }}>
+              <IconButton onClick={() => setShowModal(!showModal)} sx={{ width: 52, height: 52, bgcolor: showModal ? ACCENT_COLOR : "rgba(255,255,255,0.08)", color: "white" }}>
                 <ChatIcon />
               </IconButton>
             </Tooltip>
 
             <Button
               variant="contained"
-              color="error"
-              startIcon={<CallEndIcon />}
               onClick={leaveCall}
-              sx={{ borderRadius: "20px", px: 4, fontWeight: "bold" }}
+              sx={{ ml: 4, borderRadius: 8, px: 4, py: 1.2, bgcolor: "#ea4335", fontWeight: "700", textTransform: "none", "&:hover": { bgcolor: "#d93025" } }}
+              startIcon={<CallEndIcon />}
             >
               Leave
             </Button>

@@ -3,7 +3,6 @@ import httpStatus from 'http-status';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import express from "express";
-import { use } from 'react';
 
 const app = express();
 
@@ -81,7 +80,7 @@ const login = async (req, res) => {
         user.token = token;
         await user.save();
         console.log("User logged in successfully:", username);
-        return res.status(httpStatus.OK).json({message: "Login successful", token});
+        return res.status(httpStatus.OK).json({message: "Login successful", token, user: user.username});
     }
     catch(error) {
         console.error("Error logging in user:", error);

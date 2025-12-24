@@ -40,7 +40,8 @@ export const connectSocket = (server) => {
         socket.on("message", (path, message)=> {
             connection[path].forEach(element => {
                 if(element !== socket.id) {
-                    io.to(element).emit("message", socket.id, message);
+                    let username = users[path].find(user => user.id === socket.id).name;
+                    io.to(element).emit("message", socket.id, username, message);
                 }
             });
         })

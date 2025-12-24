@@ -43,6 +43,9 @@ export const AuthProvider = ({ children }) => {
             });
             if (response.status === HttpStatus.OK) {
                 console.log("Login successful:", response.data);
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user', response.data.user);
+                setUser(response.data.user);
                 return response.data.token;
             }
         } catch (error) {
@@ -50,6 +53,22 @@ export const AuthProvider = ({ children }) => {
             throw error;
         }
     };
+
+    const handleGoogleLogin = async (token) => {
+        try {
+            const response = await axios.post("http://localhost:5000/api/google-login", {
+                token: token // Send the credential string from Google
+            });
+            
+            if (response.status === 200) {
+                localStorage.setItem("token", response.data.token);
+                return true;
+            }
+        } catch (err) {
+            console.log(err);
+            return false;
+        }
+    }
 
     const data = {
         user,

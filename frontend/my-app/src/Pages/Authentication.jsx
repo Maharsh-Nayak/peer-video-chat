@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/authContext";
 import { useLocation } from "react-router-dom";
 import {status} from "http-status";
+import { GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from "jwt-decode";
 
 import {
   Button,
@@ -45,7 +47,7 @@ export function Authentication() {
     try {
       let res = await handleLogin(userName, password);
       if(res){
-        navigate("/meet/");
+        navigate("/dashboard");
       }
       console.log(res);
     } catch (error) {
@@ -53,9 +55,29 @@ export function Authentication() {
     }
   };
 
- return (
+  const handleGoogleSuccess = async (credentialResponse) => {
+        try {
+            const userData = jwtDecode(credentialResponse.credential);
+            
+            // You should update your AuthContext to have a handleGoogleLogin function
+            // For now, let's assume we use the existing handleLogin or a new one
+            // let res = await handleGoogleLogin(userData.email, userData.name, userData.picture);
+            
+            console.log("Google User Data:", userData);
+            
+            // Example of what to do next:
+            // if(res) navigate("/dashboard");
+            
+            // For now, let's just set the username to show it works
+            setUserName(userData.name);
+            navigate("/dashboard");
+        } catch (error) {
+            console.error("Google Login Failed:", error);
+        }
+    };
 
-  
+
+ return (
 
   <Grid container sx={{ height: "100vh" }}>
     
@@ -97,7 +119,7 @@ export function Authentication() {
       Join us today
     </Typography>
 
-    <Button
+    {/* <Button
       fullWidth
       variant="outlined"
       sx={{
@@ -117,7 +139,14 @@ export function Authentication() {
         style={{ marginRight: "8px" }}
       />
       Sign up with Google
-    </Button>
+    </Button> */}
+    <GoogleLogin
+      onSuccess={handleGoogleSuccess}
+      onError={() => console.log('Login Failed')}
+      useOneTap
+      shape="pill"
+      width="380px"
+    />
 
     <Box sx={{ display: "flex", alignItems: "center", my: 3 }}>
       <Box sx={{ flex: 1, height: "1px", background: "#ddd" }} />
