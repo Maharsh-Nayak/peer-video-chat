@@ -9,7 +9,10 @@ import { connectSocket } from "./controler/socket_manager.js";
 const app = express();
 app.set("port", (process.env.PORT || 5000));
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://peer-video-chat.vercel.app', // Allow only your local dev environment
+  credentials: true
+}));
 app.use(express.json({limit: "50mb"}));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use("/api/user", userRoutes);
