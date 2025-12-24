@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 export const AuthContext = createContext({});
 
 const client = axios.create({
-  baseURL: "https://helpful-puppy-444ddb.netlify.app/api/user",
+  baseURL: "https://peer-video-chat-y157.onrender.com/api/user",
 });
 
 export const AuthProvider = ({ children }) => {
