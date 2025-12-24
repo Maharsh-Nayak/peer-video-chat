@@ -10,7 +10,7 @@ const app = express();
 app.set("port", (process.env.PORT || 5000));
 
 app.use(cors({
-  origin: 'https://peer-video-chat.vercel.app', // Allow only your local dev environment
+  origin: 'https://peer-video-chat-fdylnroi7-maharshs-projects-50474920.vercel.app/', // Allow only your local dev environment
   credentials: true
 }));
 app.use(express.json({limit: "50mb"}));
