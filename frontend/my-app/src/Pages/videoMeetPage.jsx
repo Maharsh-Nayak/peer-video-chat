@@ -121,7 +121,7 @@ const MeetEntery = () => {
   };
 
   let connectToSocketServer = () => {
-    socketRef.current = io.connect("http://localhost:5000", { secure: false });
+    socketRef.current = io.connect("https://peer-video-chat-y157.onrender.com", { secure: false });
 
     socketRef.current.on("signal", gotMessageFromServer);
 

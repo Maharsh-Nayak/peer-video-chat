@@ -112,7 +112,7 @@ const connection = await mongoose.connect("YOUR_MONGODB_CONNECTION_STRING");
 4. Configure CORS origin in `src/server.js` (if needed):
 ```javascript
 app.use(cors({
-  origin: 'http://localhost:3000', // Your frontend URL
+  origin: 'https://peer-video-chat-y157.onrender.com', // Your frontend URL
   credentials: true
 }));
 ```
@@ -140,13 +140,13 @@ npm install
 
 3. Update Socket.IO server URL in `src/Pages/videoMeetPage.jsx`:
 ```javascript
-socketRef.current = io.connect("http://localhost:5000", { secure: false });
+socketRef.current = io.connect("https://peer-video-chat-y157.onrender.com", { secure: false });
 ```
 
 4. Update API base URL in `src/context/authContext.jsx`:
 ```javascript
 const client = axios.create({
-  baseURL: "http://localhost:5000/api/user",
+  baseURL: "https://peer-video-chat-y157.onrender.com/api/user",
 });
 ```
 
@@ -155,7 +155,7 @@ const client = axios.create({
 npm start
 ```
 
-The frontend will run on http://localhost:3000
+The frontend will run on https://peer-video-chat-y157.onrender.com
 
 ## 🎯 How It Works
 
