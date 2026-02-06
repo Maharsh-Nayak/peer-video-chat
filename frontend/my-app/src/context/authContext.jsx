@@ -6,8 +6,11 @@ import { useNavigate } from "react-router-dom";
 
 export const AuthContext = createContext({});
 
+// ENHANCED: Use environment variable for API base URL
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "https://peer-video-chat-y157.onrender.com/api";
+
 const client = axios.create({
-  baseURL: "https://peer-video-chat-y157.onrender.com/api/user",
+  baseURL: `${API_BASE_URL}/user`,
 });
 
 export const AuthProvider = ({ children }) => {

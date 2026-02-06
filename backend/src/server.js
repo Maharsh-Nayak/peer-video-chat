@@ -2,34 +2,61 @@ import express from "express";
 import {createServer} from "node:http"
 import cors from "cors";
 import mongoose from "mongoose";
+import dotenv from "dotenv";
 import userRoutes from "./route/userRoutes.js";
 import { connectSocket } from "./controler/socket_manager.js";
 
+// Load environment variables
+dotenv.config();
 
 const app = express();
-app.set("port", (process.env.PORT || 5000));
+const PORT = process.env.PORT || 5000;
+const MONGODB_URI = process.env.MONGODB_URI;
+const CORS_ORIGIN = process.env.SOCKET_IO_CORS_ORIGIN || "*";
+const NODE_ENV = process.env.NODE_ENV || "development";
 
+// Validate required environment variables
+if (!MONGODB_URI) {
+  console.error("ERROR: MONGODB_URI environment variable is not set");
+  process.exit(1);
+}
+
+app.set("port", PORT);
+
+// ENHANCED: Use environment variable for CORS origin
 app.use(cors({
-  origin: 'https://peer-video-chat-cusuvlaor-maharshs-projects-50474920.vercel.app', // Allow only your local dev environment
+  origin: CORS_ORIGIN.split(',').map(origin => origin.trim()),
   credentials: true
 }));
 app.use(express.json({limit: "50mb"}));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 app.use("/api/user", userRoutes);
 
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", environment: NODE_ENV });
+});
 
 const server=createServer(app);
-const io = connectSocket(server);
+const io = connectSocket(server, CORS_ORIGIN);
 
 const start = async () => {
+    try {
+      // ENHANCED: Use environment variable for MongoDB connection
+      const connection = await mongoose.connect(MONGODB_URI);
 
-    const connection = await mongoose.connect("mongodb+srv://maharshnayak5:Or5esSYQuGlZLj0i@cluster0.t0bqm.mongodb.net/?appName=Cluster0");
+      console.log("✓ Connected to MongoDB");
+      console.log(`✓ Environment: ${NODE_ENV}`);
+      console.log(`✓ CORS origins: ${CORS_ORIGIN}`);
 
-    console.log("Connected to MongoDB");
-
-    server.listen(app.get("port"), () => {
-        console.log("Server started on port " + app.get("port"));
-    })
+      server.listen(PORT, () => {
+          console.log(`✓ Server started on port ${PORT}`);
+      })
+    } catch (error) {
+      console.error("✗ Failed to start server:", error.message);
+      process.exit(1);
+    }
 }
 
 start()
+
